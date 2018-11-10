@@ -27,6 +27,8 @@ THE SOFTWARE.
 import sys
 import argparse
 from argparse import ArgumentTypeError
+from pathlib import Path
+
 import feedparser
 from feedparser import CharacterEncodingOverride
 from urllib.request import urlopen, Request
@@ -98,6 +100,7 @@ class PodcastArchiver:
         self.update = args.update
         self.progress = args.progress
         self.slugify = args.slugify
+        self.dryrun = args.dry_run
         self.maximumEpisodes = args.max_episodes or None
 
         if self.verbose > 1:
@@ -358,13 +361,18 @@ class PodcastArchiver:
                         from tqdm import tqdm
                         with tqdm(total=total_size, unit='B',
                                   unit_scale=True, unit_divisor=1024) as progress_bar:
-
-                            with open(filename, 'wb') as outfile:
-                                self.prettyCopyfileobj(response, outfile,
-                                                       callback=progress_bar.update)
+                            if not self.dryrun:
+                                with open(filename, 'wb') as outfile:
+                                    self.prettyCopyfileobj(response, outfile,
+                                                           callback=progress_bar.update)
+                            else:
+                                Path(filename).touch()
                     else:
-                        with open(filename, 'wb') as outfile:
-                            copyfileobj(response, outfile)
+                        if not self.dryrun:
+                            with open(filename, 'wb') as outfile:
+                                copyfileobj(response, outfile)
+                        else:
+                            Path(filename).touch()
 
                 if self.verbose > 1:
                     print("\t✓ Download successful.")
@@ -419,6 +427,11 @@ if __name__ == "__main__":
         parser.add_argument('-m', '--max-episodes', type=int,
                             help='''Only download the given number of episodes per podcast
                                  feed. Useful if you don't really need the entire backlog.''')
+        parser.add_argument('-D', '--dry-run', action='store_true',
+                            help='''If this is set, the archiver will only create empty files that have
+                                the same name as the one that would be downloaded. This allows for
+                                testing a configuration without actually downloading large amounts
+                                of data.''')
 
         args = parser.parse_args()
 
