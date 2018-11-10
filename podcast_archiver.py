@@ -178,11 +178,13 @@ class PodcastArchiver:
                 basename = basename.replace("?", "")
                 basename = basename.replace("/", "-")
                 basename = basename.replace('"', "'")
+                basename = basename.replace('*', "-")
                 self._feed_title = self._feed_title.replace(":", " -")
                 self._feed_title = self._feed_title.replace("|", "-")
                 self._feed_title = self._feed_title.replace("?", "")
                 self._feed_title = self._feed_title.replace("/", "-")
                 self._feed_title = self._feed_title.replace('"', "'")
+                self._feed_title = self._feed_title.replace('*', "-")
 
         # Generate local path and check for existence
         if self.subdirs:
