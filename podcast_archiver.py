@@ -353,7 +353,7 @@ class PodcastArchiver:
                 continue
 
             # Begin downloading
-            prepared_request = Request(link, headers=self._headers)
+            prepared_request = Request(urllib.parse.quote(link, safe="%/:=&?~#+!$,;'@()*[]"), headers=self._headers)
             try:
                 with urlopen(prepared_request) as response:
 
