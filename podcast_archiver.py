@@ -53,7 +53,6 @@ class writeable_dir(argparse.Action):
 
 
 class PodcastArchiver:
-
     _feed_title = ''
     _feedobj = None
     _feed_info_dict = {}
@@ -101,6 +100,7 @@ class PodcastArchiver:
         self.slugify = args.slugify
         self.dryrun = args.dry_run
         self.maximumEpisodes = args.max_episodes or None
+        self.retitle = args.re_title
 
         if self.verbose > 1:
             print("Verbose level: ", self.verbose)
@@ -118,7 +118,6 @@ class PodcastArchiver:
         for feed in [node.get('xmlUrl') for node
                      in tree.findall("*/outline/[@type='rss']")
                      if node.get('xmlUrl') is not None]:
-
             self.addFeed(feed)
 
     def processFeeds(self):
@@ -153,11 +152,15 @@ class PodcastArchiver:
 
         return filename
 
-    def linkToTargetFilename(self, link):
+    def linkToTargetFilename(self, link, title=None):
 
         # Remove HTTP GET parameters from filename by parsing URL properly
         linkpath = urlparse(link).path
         basename = path.basename(linkpath)
+        filename, fileextension = path.splitext(basename)
+
+        if self.retitle and title is not None:
+            basename = title + fileextension
 
         # If requested, slugify the filename
         if self.slugify:
@@ -280,10 +283,10 @@ class PodcastArchiver:
             if self.update:
                 for index, episode_dict in enumerate(linklist):
                     link = episode_dict['url']
-                    filename = self.linkToTargetFilename(link)
+                    filename = self.linkToTargetFilename(link, episode_dict['title'])
 
                     if path.isfile(filename):
-                        del(linklist[index:])
+                        del (linklist[index:])
                         break
                 numberOfLinks = len(linklist)
 
@@ -305,7 +308,6 @@ class PodcastArchiver:
             print('Feed info:\n%s\n' % json.dumps(self._feed_info_dict, indent=2))
 
         return linklist
-
 
     def downloadPodcastFiles(self, linklist):
         if linklist is None or self._feed_title is None:
@@ -332,9 +334,8 @@ class PodcastArchiver:
                     print('\tEpisode info:')
                     for key in episode_dict.keys():
                         print("\t * %10s: %s" % (key, episode_dict[key]))
-
             # Check existence once ...
-            filename = self.linkToTargetFilename(link)
+            filename = self.linkToTargetFilename(link, episode_dict['title'])
 
             if self.verbose > 1:
                 print("\tLocal filename:", filename)
@@ -353,7 +354,7 @@ class PodcastArchiver:
                     link = response.geturl()
                     total_size = int(response.getheader('content-length', '0'))
                     old_filename = filename
-                    filename = self.linkToTargetFilename(link)
+                    filename = self.linkToTargetFilename(link, episode_dict['title'])
 
                     if old_filename != filename:
                         if self.verbose > 1:
@@ -442,6 +443,9 @@ if __name__ == "__main__":
                                 the same name as the one that would be downloaded. This allows for
                                 testing a configuration without actually downloading large amounts
                                 of data.''')
+        parser.add_argument('-r', '--re-title', action='store_true',
+                            help='''Will cause the title of the episode to be used as the name of the
+                            downloaded file instead of the name of the file as it is named on the server.''')
 
         args = parser.parse_args()
 
