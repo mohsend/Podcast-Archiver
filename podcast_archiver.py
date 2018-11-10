@@ -101,6 +101,7 @@ class PodcastArchiver:
         self.dryrun = args.dry_run
         self.maximumEpisodes = args.max_episodes or None
         self.retitle = args.re_title
+        self.overwrite_on_size_mismatch = args.overwrite_on_size_mismatch
 
         if self.verbose > 1:
             print("Verbose level: ", self.verbose)
@@ -361,9 +362,17 @@ class PodcastArchiver:
                             print("\tResolved filename:", filename)
 
                         if path.isfile(filename):
-                            if self.verbose > 1:
-                                print("\t✓ Already exists.")
-                            continue
+                            if total_size == path.getsize(filename):
+                                if self.verbose > 1:
+                                    print("\t✓ Already exists.")
+                                continue
+                            else:
+                                if self.overwrite_on_size_mismatch:
+                                    remove(filename)
+                                    if self.verbose > 1:
+                                        print("\tFile deleted.")
+                                else:
+                                    continue
 
                     # Create the subdir, if it does not exist
                     makedirs(path.dirname(filename), exist_ok=True)
@@ -446,6 +455,10 @@ if __name__ == "__main__":
         parser.add_argument('-r', '--re-title', action='store_true',
                             help='''Will cause the title of the episode to be used as the name of the
                             downloaded file instead of the name of the file as it is named on the server.''')
+        parser.add_argument('-O', '--overwrite-on-size-mismatch', action='store_true',
+                            help='''Will overwrite existing files if the size on the server differs from
+                            the size of the local file. This is helpful if an episode has been downloaded
+                            incompletely or has been re-published because of errors.''')
 
         args = parser.parse_args()
 

@@ -33,6 +33,7 @@ Before downloading any episode the function first fetches all available pages of
 * `-m <number_of_episodes>`, `--max-episodes=<number_of_episodes>`: Only download the given `<number_of_episodes>` per podcast feed. Useful if you don't really need the entire backlog. Keep in mind that with subsequent executions with new episodes appearing, Podcast Archiver will currently *not* remove previous episodes. Therefore the number of episodes on disk will increase (actually by a maximum of `<number_of_episodes>`) when new episodes start coming up in the feed, and the Archiver is run again.
 * `-D` / `--dry-run`: If this is set, the archiver will only create empty files that have the same name as the one that would be downloaded. This allows for testing a configuration without actually downloading large amounts of data. 
 * `-r`, `--re-title`: Will cause the title of the episode to be used as the name of the downloaded file instead of the name of the file as it is named on the server.
+* `-O`, `--overwrite-on-size-mismatch`: Will overwrite existing files if the size on the server differs from the size of the local file. This is helpful if an episode has been downloaded incompletely or has been re-published because of errors.
 
 
 ### Full-fledged example
