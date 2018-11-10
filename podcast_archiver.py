@@ -22,8 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
-
+import platform
 import sys
 import argparse
 from argparse import ArgumentTypeError
@@ -169,6 +168,13 @@ class PodcastArchiver:
             basename.replace(path.sep, '_')
             self._feed_title.replace(path.pathsep, '_')
             self._feed_title.replace(path.sep, '_')
+            if platform.system() == "Windows":
+                basename = basename.replace(":", " -")
+                basename = basename.replace("|", "-")
+                basename = basename.replace("?", "")
+                self._feed_title = self._feed_title.replace(":", " -")
+                self._feed_title = self._feed_title.replace("|", "-")
+                self._feed_title = self._feed_title.replace("?", "")
 
         # Generate local path and check for existence
         if self.subdirs:
