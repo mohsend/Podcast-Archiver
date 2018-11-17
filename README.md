@@ -34,6 +34,7 @@ Before downloading any episode the function first fetches all available pages of
 * `-D` / `--dry-run`: If this is set, the archiver will only create empty files that have the same name as the one that would be downloaded. This allows for testing a configuration without actually downloading large amounts of data. 
 * `-r`, `--re-title`: Will cause the title of the episode to be used as the name of the downloaded file instead of the name of the file as it is named on the server.
 * `-O`, `--overwrite-on-size-mismatch`: Will overwrite existing files if the size on the server differs from the size of the local file. This is helpful if an episode has been downloaded incompletely or has been re-published because of errors.
+* `-l`, `--delete-illegal-characters`: Will cause characters that are not allowed in file names to be deleted. Otherwise the characters will be replaced with characters that make sense in the context. The default behavior will result in prettier file names, but deletion might improve compatibility with naming schemes of other podcast clients.
 
 
 ### Full-fledged example

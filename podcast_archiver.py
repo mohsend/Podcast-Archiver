@@ -102,6 +102,7 @@ class PodcastArchiver:
         self.maximumEpisodes = args.max_episodes or None
         self.retitle = args.re_title
         self.overwrite_on_size_mismatch = args.overwrite_on_size_mismatch
+        self.delete_illegal_characters = args.delete_illegal_characters
 
         if self.verbose > 1:
             print("Verbose level: ", self.verbose)
@@ -173,22 +174,7 @@ class PodcastArchiver:
             self._feed_title.replace(path.pathsep, '_')
             self._feed_title.replace(path.sep, '_')
             if platform.system() == "Windows":
-                basename = basename.replace(":", " -")
-                basename = basename.replace("|", "-")
-                basename = basename.replace("?", "")
-                basename = basename.replace("/", "-")
-                basename = basename.replace('"', "'")
-                basename = basename.replace('*', "-")
-                basename = basename.replace('>', "-")
-                basename = basename.replace('<', "-")
-                self._feed_title = self._feed_title.replace(":", " -")
-                self._feed_title = self._feed_title.replace("|", "-")
-                self._feed_title = self._feed_title.replace("?", "")
-                self._feed_title = self._feed_title.replace("/", "-")
-                self._feed_title = self._feed_title.replace('"', "'")
-                self._feed_title = self._feed_title.replace('*', "-")
-                self._feed_title = self._feed_title.replace('>', "-")
-                self._feed_title = self._feed_title.replace('<', "-")
+                basename = self.replaceCharactersOnWindows(basename)
 
         # Generate local path and check for existence
         if self.subdirs:
@@ -197,6 +183,43 @@ class PodcastArchiver:
             filename = path.join(self.savedir, basename)
 
         return filename
+
+    def replaceCharactersOnWindows(self, basename):
+        if self.delete_illegal_characters:
+            basename = basename.replace(":", "")
+            basename = basename.replace("|", "")
+            basename = basename.replace("?", "")
+            basename = basename.replace("/", "")
+            basename = basename.replace('"', "")
+            basename = basename.replace('*', "")
+            basename = basename.replace('>', "")
+            basename = basename.replace('<', "")
+            self._feed_title = self._feed_title.replace(":", "")
+            self._feed_title = self._feed_title.replace("|", "")
+            self._feed_title = self._feed_title.replace("?", "")
+            self._feed_title = self._feed_title.replace("/", "")
+            self._feed_title = self._feed_title.replace('"', "")
+            self._feed_title = self._feed_title.replace('*', "")
+            self._feed_title = self._feed_title.replace('>', "")
+            self._feed_title = self._feed_title.replace('<', "")
+        else:
+            basename = basename.replace(":", " -")
+            basename = basename.replace("|", "-")
+            basename = basename.replace("?", "")
+            basename = basename.replace("/", "-")
+            basename = basename.replace('"', "'")
+            basename = basename.replace('*', "-")
+            basename = basename.replace('>', "-")
+            basename = basename.replace('<', "-")
+            self._feed_title = self._feed_title.replace(":", " -")
+            self._feed_title = self._feed_title.replace("|", "-")
+            self._feed_title = self._feed_title.replace("?", "")
+            self._feed_title = self._feed_title.replace("/", "-")
+            self._feed_title = self._feed_title.replace('"', "'")
+            self._feed_title = self._feed_title.replace('*', "-")
+            self._feed_title = self._feed_title.replace('>', "-")
+            self._feed_title = self._feed_title.replace('<', "-")
+        return basename
 
     def parseFeedToNextPage(self, feedobj=None):
 
@@ -465,6 +488,11 @@ if __name__ == "__main__":
                             help='''Will overwrite existing files if the size on the server differs from
                             the size of the local file. This is helpful if an episode has been downloaded
                             incompletely or has been re-published because of errors.''')
+        parser.add_argument('-l', '--delete-illegal-characters', action='store_true',
+                            help='''Will cause characters that are not allowed in file names to be deleted.
+                            Otherwise the characters will be replaced with characters that make sense in the
+                            context. The default behavior will result in prettier file names, but deletion
+                            might improve compatibility with naming schemes of other podcast clients.''')
 
         args = parser.parse_args()
 
