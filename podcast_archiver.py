@@ -22,6 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+import logging
 import platform
 import sys
 import argparse
@@ -38,6 +39,8 @@ from urllib.parse import urlparse
 import unicodedata
 import re
 import xml.etree.ElementTree as etree
+
+logger = logging.getLogger(__name__)
 
 
 class writeable_dir(argparse.Action):
@@ -76,6 +79,14 @@ class PodcastArchiver:
 
         feedparser.USER_AGENT = self._userAgent
 
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
     def addArguments(self, args):
 
         # if type(args) is argparse.ArgumentParser:
@@ -83,7 +94,7 @@ class PodcastArchiver:
 
         self.verbose = args.verbose or 0
         if self.verbose > 2:
-            print('Input arguments:', args)
+            logger.info('Input arguments: %s' % args)
 
         for feed in (args.feed or []):
             self.addFeed(feed)
@@ -105,7 +116,7 @@ class PodcastArchiver:
         self.delete_illegal_characters = args.delete_illegal_characters
 
         if self.verbose > 1:
-            print("Verbose level: ", self.verbose)
+            logger.info("Verbose level: %d", self.verbose)
 
     def addFeed(self, feed):
         if path.isfile(feed):
@@ -125,16 +136,16 @@ class PodcastArchiver:
     def processFeeds(self):
 
         if self.verbose > 0 and self.update:
-            print("Updating archive")
+            logger.info("Updating archive")
 
         for feed in self.feedlist:
             if self.verbose > 0:
-                print("\nDownloading archive for: " + feed)
+                logger.info("Downloading archive for: " + feed)
             linklist = self.processPodcastLink(feed)
             self.downloadPodcastFiles(linklist)
 
         if self.verbose > 0:
-            print("\nDone.")
+            logger.info("Done.")
 
     def parseGlobalFeedInfo(self, feedobj=None):
         if feedobj is None:
@@ -275,21 +286,23 @@ class PodcastArchiver:
 
     def processPodcastLink(self, link):
         if self.verbose > 0:
-            print("1. Gathering link list ...", end="", flush=True)
+            logger.info("1. Gathering link list ...")
 
         self._feed_title = None
         self._feed_next_page = link
         first_page = True
         linklist = []
+        page = 2
         while self._feed_next_page is not None:
             if self.verbose > 0:
-                print(".", end="", flush=True)
+                logger.info("Loading page #%d", page)
+                page += 1
 
             self._feedobj = feedparser.parse(self._feed_next_page)
 
             # Escape improper feed-URL
             if 'status' in self._feedobj.keys() and self._feedobj['status'] >= 400:
-                print("\nQuery returned HTTP error", self._feedobj['status'])
+                logger.error("Query returned HTTP error" + self._feedobj['status'])
                 return None
 
             # Escape malformatted XML
@@ -297,7 +310,7 @@ class PodcastArchiver:
 
                 # If the character encoding is wrong, we continue as long as the reparsing succeeded
                 if type(self._feedobj['bozo_exception']) is not CharacterEncodingOverride:
-                    print('\nDownloaded feed is malformatted on', self._feed_next_page)
+                    logger.error('Downloaded feed is malformatted on' + self._feed_next_page)
                     return None
 
             if first_page:
@@ -335,11 +348,11 @@ class PodcastArchiver:
         linklist.reverse()
 
         if self.verbose > 0:
-            print(" %d episodes" % numberOfLinks)
+            logger.info("Found %d episodes" % numberOfLinks)
 
         if self.verbose > 2:
             import json
-            print('Feed info:\n%s\n' % json.dumps(self._feed_info_dict, indent=2))
+            logger.info('Feed info: %s' % json.dumps(self._feed_info_dict, ensure_ascii=False))
 
         return linklist
 
@@ -349,34 +362,30 @@ class PodcastArchiver:
 
         nlinks = len(linklist)
         if nlinks > 0:
-            if self.verbose == 1:
-                print("2. Downloading content ... ", end="")
-            elif self.verbose > 1:
-                print("2. Downloading content ...")
+            if self.verbose > 0:
+                logger.info("2. Downloading content ... ")
 
         for cnt, episode_dict in enumerate(linklist):
             link = episode_dict['url']
             if self.verbose == 1:
-                print("\r2. Downloading content ... {0}/{1}"
-                      .format(cnt + 1, nlinks), end="", flush=True)
+                logger.info("Downloading content ... %d/%d", cnt + 1, nlinks)
             elif self.verbose > 1:
-                print("\n\tDownloading file no. {0}/{1}:\n\t{2}"
-                      .format(cnt + 1, nlinks, link))
+                logger.info("Downloading file no. %d/%d: %s", cnt + 1, nlinks, link)
 
                 if self.verbose > 2:
                     import json
-                    print('\tEpisode info:')
+                    logger.info('Episode info:')
                     for key in episode_dict.keys():
-                        print("\t * %10s: %s" % (key, episode_dict[key]))
+                        logger.info(" * %10s: %s" % (key, episode_dict[key]))
             # Check existence once ...
             filename = self.linkToTargetFilename(link, episode_dict['title'])
 
             if self.verbose > 1:
-                print("\tLocal filename:", filename)
+                logger.info("Local filename: %s", filename)
 
             if path.isfile(filename):
                 if self.verbose > 1:
-                    print("\t✓ Already exists.")
+                    logger.info("✓ Already exists.")
                 continue
 
             # Begin downloading
@@ -392,18 +401,18 @@ class PodcastArchiver:
 
                     if old_filename != filename:
                         if self.verbose > 1:
-                            print("\tResolved filename:", filename)
+                            logger.info("Resolved filename: %s", filename)
 
                         if path.isfile(filename):
                             if total_size == path.getsize(filename):
                                 if self.verbose > 1:
-                                    print("\t✓ Already exists.")
+                                    logger.info("✓ Already exists.")
                                 continue
                             else:
                                 if self.overwrite_on_size_mismatch:
                                     remove(filename)
                                     if self.verbose > 1:
-                                        print("\tFile deleted.")
+                                        logger.info("File deleted.")
                                 else:
                                     continue
 
@@ -428,14 +437,14 @@ class PodcastArchiver:
                             Path(filename).touch()
 
                 if self.verbose > 1:
-                    print("\t✓ Download successful.")
+                    logger.info("✓ Download successful.")
             except (urllib.error.HTTPError,
                     urllib.error.URLError) as error:
                 if self.verbose > 1:
-                    print("\t✗ Download failed. Query returned '%s'" % error)
+                    logger.error("✗ Download failed. Query returned '%s'" % error)
             except KeyboardInterrupt:
                 if self.verbose > 0:
-                    print("\n\t✗ Unexpected interruption. Deleting unfinished file.")
+                    logger.error("✗ Unexpected interruption. Deleting unfinished file.")
 
                 remove(filename)
                 raise
@@ -504,8 +513,11 @@ if __name__ == "__main__":
         pa.addArguments(args)
         pa.processFeeds()
     except KeyboardInterrupt:
+        logger.error("Interrupted by user")
         sys.exit('\nERROR: Interrupted by user')
     except FileNotFoundError as error:
+        logger.error("%s", error)
         sys.exit('\nERROR: %s' % error)
     except ArgumentTypeError as error:
+        logger.error("Your config is invalid: %s", error)
         sys.exit('\nERROR: Your config is invalid: %s' % error)
