@@ -22,6 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+import datetime
 import logging
 import platform
 import sys
@@ -35,6 +36,7 @@ from urllib.request import urlopen, Request
 import urllib.error
 from shutil import copyfileobj
 from os import path, remove, makedirs, access, W_OK
+import os
 from urllib.parse import urlparse
 import unicodedata
 import re
@@ -86,6 +88,15 @@ class PodcastArchiver:
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(formatter)
         logger.addHandler(ch)
+
+        logfilename = "podcast_archiver_" + datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S") + ".log"
+        logfilename_with_path = os.path.join(os.path.dirname(__file__), logfilename)
+
+        fh = logging.FileHandler(logfilename_with_path,
+                                 encoding='UTF-8')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
     def addArguments(self, args):
 
