@@ -389,9 +389,7 @@ class PodcastArchiver:
 
         for cnt, episode_dict in enumerate(linklist):
             link = episode_dict['url']
-            if self.verbose == 1:
-                logger.info("Downloading content ... %d/%d", cnt + 1, nlinks)
-            elif self.verbose > 1:
+            if self.verbose > 0:
                 logger.info("Downloading file no. %d/%d: %s", cnt + 1, nlinks, link)
 
                 if self.verbose > 2:
