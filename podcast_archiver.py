@@ -78,7 +78,13 @@ class PodcastArchiver:
 
     feedlist = []
 
+    skippedDownloads = 0
+    successfulDownloads = 0
+    failedDownloads = 0
+
     def __init__(self):
+
+
 
         feedparser.USER_AGENT = self._userAgent
 
@@ -158,6 +164,10 @@ class PodcastArchiver:
 
         if self.verbose > 0:
             logger.info("Done.")
+            logger.info("Downloads skipped: %d, successful: %d, failed: %d",
+                        self.skippedDownloads,
+                        self.successfulDownloads,
+                        self.failedDownloads)
 
     def parseGlobalFeedInfo(self, feedobj=None):
         if feedobj is None:
@@ -398,6 +408,7 @@ class PodcastArchiver:
             if path.isfile(filename):
                 if self.verbose > 1:
                     logger.info("✓ Already exists.")
+                    self.skippedDownloads += 1
                 continue
 
             # Begin downloading
@@ -419,6 +430,7 @@ class PodcastArchiver:
                             if total_size == path.getsize(filename):
                                 if self.verbose > 1:
                                     logger.info("✓ Already exists.")
+                                    self.skippedDownloads += 1
                                 continue
                             else:
                                 if self.overwrite_on_size_mismatch:
@@ -450,16 +462,20 @@ class PodcastArchiver:
 
                 if self.verbose > 1:
                     logger.info("✓ Download successful.")
+                    self.successfulDownloads += 1
 
             except http.client.HTTPException as error:
                 logger.error("✗ Download failed. Query returned '%s'" % error)
+                self.failedDownloads += 1
             except (urllib.error.HTTPError,
                     urllib.error.URLError) as error:
                 if self.verbose > 1:
                     logger.error("✗ Download failed. Query returned '%s'" % error)
+                    self.failedDownloads += 1
             except KeyboardInterrupt:
                 if self.verbose > 0:
                     logger.error("✗ Unexpected interruption. Deleting unfinished file.")
+                    self.failedDownloads += 1
 
                 remove(filename)
                 raise
