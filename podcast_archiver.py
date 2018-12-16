@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 import datetime
+import http
 import logging
 import platform
 import sys
@@ -449,6 +450,9 @@ class PodcastArchiver:
 
                 if self.verbose > 1:
                     logger.info("✓ Download successful.")
+
+            except http.client.HTTPException as error:
+                logger.error("✗ Download failed. Query returned '%s'" % error)
             except (urllib.error.HTTPError,
                     urllib.error.URLError) as error:
                 if self.verbose > 1:
