@@ -1,3 +1,4 @@
 *.opml
 *.txt
 /venv
+*.log
