@@ -103,7 +103,7 @@ class PodcastArchiver:
         feedparser.USER_AGENT = self._userAgent
 
         logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(module)s.%(name)s:%(lineno)d - %(levelname)s - %(message)s')
 
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
