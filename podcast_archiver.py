@@ -58,6 +58,20 @@ class writeable_dir(argparse.Action):
             raise ArgumentTypeError("%s is not a writeable dir" % prospective_dir)
 
 
+def getMaxFilenameLength():
+    if platform.system() == "Linux":
+        return 255
+    if platform.system() == "Windows":
+        return 255
+    if platform.system() == "Darwin":
+        return 255
+
+
+def shortenFilename(filename):
+    filename, file_extension = os.path.splitext(filename)
+    return filename[:(getMaxFilenameLength()-len(file_extension)-1)] + "…" + file_extension
+
+
 class PodcastArchiver:
     _feed_title = ''
     _feedobj = None
@@ -399,6 +413,7 @@ class PodcastArchiver:
                         logger.info(" * %10s: %s" % (key, episode_dict[key]))
             # Check existence once ...
             filename = self.linkToTargetFilename(link, episode_dict['title'])
+            filename = self.shortenOnDemand(filename)
 
             if self.verbose > 1:
                 logger.info("Local filename: %s", filename)
@@ -419,6 +434,7 @@ class PodcastArchiver:
                     total_size = int(response.getheader('content-length', '0'))
                     old_filename = filename
                     filename = self.linkToTargetFilename(link, episode_dict['title'])
+                    filename = self.shortenOnDemand(filename)
 
                     if old_filename != filename:
                         if self.verbose > 1:
@@ -477,6 +493,13 @@ class PodcastArchiver:
 
                 remove(filename)
                 raise
+
+    def shortenOnDemand(self, filename):
+        if len(filename) > getMaxFilenameLength():
+            filename = shortenFilename(filename)
+            if self.verbose > 1:
+                logger.info("Filename has been shortened")
+        return filename
 
     def prettyCopyfileobj(self, fsrc, fdst, callback, block_size=8 * 1024):
         while True:
