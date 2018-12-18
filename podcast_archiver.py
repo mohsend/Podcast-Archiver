@@ -442,9 +442,9 @@ class PodcastArchiver:
 
                         if path.isfile(filename):
                             if total_size == path.getsize(filename):
+                                self.skippedDownloads += 1
                                 if self.verbose > 1:
                                     logger.info("✓ Already exists.")
-                                    self.skippedDownloads += 1
                                 continue
                             else:
                                 if self.overwrite_on_size_mismatch:
@@ -474,22 +474,22 @@ class PodcastArchiver:
                         else:
                             Path(filename).touch()
 
+                self.successfulDownloads += 1
                 if self.verbose > 1:
                     logger.info("✓ Download successful.")
-                    self.successfulDownloads += 1
 
             except http.client.HTTPException as error:
                 logger.error("✗ Download failed. Query returned '%s'" % error)
                 self.failedDownloads += 1
             except (urllib.error.HTTPError,
                     urllib.error.URLError) as error:
+                self.failedDownloads += 1
                 if self.verbose > 1:
                     logger.error("✗ Download failed. Query returned '%s'" % error)
-                    self.failedDownloads += 1
             except KeyboardInterrupt:
+                self.failedDownloads += 1
                 if self.verbose > 0:
                     logger.error("✗ Unexpected interruption. Deleting unfinished file.")
-                    self.failedDownloads += 1
 
                 remove(filename)
                 raise
