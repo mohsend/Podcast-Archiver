@@ -419,9 +419,9 @@ class PodcastArchiver:
                 logger.info("Local filename: %s", filename)
 
             if path.isfile(filename):
+                self.skippedDownloads += 1
                 if self.verbose > 1:
                     logger.info("✓ Already exists.")
-                    self.skippedDownloads += 1
                 continue
 
             # Begin downloading
