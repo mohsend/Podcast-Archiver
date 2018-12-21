@@ -96,6 +96,8 @@ class PodcastArchiver:
     successfulDownloads = 0
     failedDownloads = 0
 
+    downloadedEpisodes = []
+
     def __init__(self):
 
 
@@ -182,6 +184,9 @@ class PodcastArchiver:
                         self.skippedDownloads,
                         self.successfulDownloads,
                         self.failedDownloads)
+            logger.info("Downloaded Episodes:")
+            for ep in self.downloadedEpisodes:
+                logger.info(ep)
 
     def parseGlobalFeedInfo(self, feedobj=None):
         if feedobj is None:
@@ -475,6 +480,7 @@ class PodcastArchiver:
                             Path(filename).touch()
 
                 self.successfulDownloads += 1
+                self.downloadedEpisodes.append(filename)
                 if self.verbose > 1:
                     logger.info("✓ Download successful.")
 
