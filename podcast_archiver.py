@@ -343,7 +343,7 @@ class PodcastArchiver:
 
             # Escape improper feed-URL
             if 'status' in self._feedobj.keys() and self._feedobj['status'] >= 400:
-                logger.error("Query returned HTTP error" + self._feedobj['status'])
+                logger.error("Query returned HTTP error" + str(self._feedobj['status']))
                 return None
 
             # Escape malformatted XML
