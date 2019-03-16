@@ -74,7 +74,7 @@ def shorten_filename(filename):
 
 class PodcastArchiver:
     _feed_title = ''
-    _feedobj = None
+    _feed_object = None
     _feed_info_dict = {}
 
     _userAgent = 'Podcast-Archiver/0.4 (https://github.com/janwh/podcast-archiver)'
@@ -83,14 +83,14 @@ class PodcastArchiver:
     _episode_info_keys = ['author', 'link', 'subtitle', 'title', ]
     _date_keys = ['published', ]
 
-    savedir = ''
+    save_dir = ''
     verbose = 0
-    subdirs = False
+    sub_dirs = False
     update = False
     progress = False
     maximumEpisodes = None
 
-    feedlist = []
+    feed_list = []
 
     skippedDownloads = 0
     successfulDownloads = 0
@@ -110,10 +110,10 @@ class PodcastArchiver:
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-        logfilename = "podcast_archiver_" + datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S") + ".log"
-        logfilename_with_path = os.path.join(os.path.dirname(__file__), logfilename)
+        logfile_name = "podcast_archiver_" + datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S") + ".log"
+        logfile_name_with_path = os.path.join(os.path.dirname(__file__), logfile_name)
 
-        fh = logging.FileHandler(logfilename_with_path,
+        fh = logging.FileHandler(logfile_name_with_path,
                                  encoding='UTF-8')
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
@@ -135,9 +135,9 @@ class PodcastArchiver:
             self.parse_opml_file(opml)
 
         if args.dir:
-            self.savedir = args.dir
+            self.save_dir = args.dir
 
-        self.subdirs = args.subdirs
+        self.sub_dirs = args.subdirs
         self.update = args.update
         self.progress = args.progress
         self.slugify = args.slugify
@@ -152,9 +152,9 @@ class PodcastArchiver:
 
     def add_feed(self, feed):
         if path.isfile(feed):
-            self.feedlist += open(feed, 'r').read().strip().splitlines()
+            self.feed_list += open(feed, 'r').read().strip().splitlines()
         else:
-            self.feedlist.append(feed)
+            self.feed_list.append(feed)
 
     def parse_opml_file(self, opml):
         with opml as file:
@@ -170,7 +170,7 @@ class PodcastArchiver:
         if self.verbose > 0 and self.update:
             logger.info("Updating archive")
 
-        for feed in self.feedlist:
+        for feed in self.feed_list:
             if self.verbose > 0:
                 logger.info("Downloading archive for: " + feed)
             linklist = self.process_podcast_link(feed)
@@ -186,14 +186,14 @@ class PodcastArchiver:
             for ep in self.downloadedEpisodes:
                 logger.info(ep)
 
-    def parse_global_feed_info(self, feedobj=None):
-        if feedobj is None:
-            feedobj = self._feedobj
+    def parse_global_feed_info(self, feed_object=None):
+        if feed_object is None:
+            feed_object = self._feed_object
 
         self._feed_info_dict = {}
-        if 'feed' in feedobj:
+        if 'feed' in feed_object:
             for key in self._global_info_keys:
-                self._feed_info_dict['feed_' + key] = feedobj['feed'].get(key, None)
+                self._feed_info_dict['feed_' + key] = feed_object['feed'].get(key, None)
 
         return self._feed_info_dict
 
@@ -227,10 +227,10 @@ class PodcastArchiver:
                 basename = self.replace_characters_on_windows(basename)
 
         # Generate local path and check for existence
-        if self.subdirs:
-            filename = path.join(self.savedir, self._feed_title, basename)
+        if self.sub_dirs:
+            filename = path.join(self.save_dir, self._feed_title, basename)
         else:
-            filename = path.join(self.savedir, basename)
+            filename = path.join(self.save_dir, basename)
 
         return filename
 
@@ -278,7 +278,7 @@ class PodcastArchiver:
     def parse_feed_to_next_page(self, feed_object=None):
 
         if feed_object is None:
-            feed_object = self._feedobj
+            feed_object = self._feed_object
 
         # Assuming there will only be one link declared as 'next'
         self._feed_next_page = [link['href'] for link in feed_object['feed']['links']
@@ -294,7 +294,7 @@ class PodcastArchiver:
     def parse_feed_to_links(self, feed=None):
 
         if feed is None:
-            feed = self._feedobj
+            feed = self._feed_object
 
         # Try different feed episode layouts: 'items' or 'entries'
         episode_list = feed.get('items', False) or feed.get('entries', False)
@@ -337,18 +337,18 @@ class PodcastArchiver:
                 logger.info("Loading page #%d", page)
                 page += 1
 
-            self._feedobj = feedparser.parse(self._feed_next_page)
+            self._feed_object = feedparser.parse(self._feed_next_page)
 
             # Escape improper feed-URL
-            if 'status' in self._feedobj.keys() and self._feedobj['status'] >= 400:
-                logger.error("Query returned HTTP error" + str(self._feedobj['status']))
+            if 'status' in self._feed_object.keys() and self._feed_object['status'] >= 400:
+                logger.error("Query returned HTTP error" + str(self._feed_object['status']))
                 return None
 
             # Escape malformatted XML
-            if self._feedobj['bozo'] == 1:
+            if self._feed_object['bozo'] == 1:
 
                 # If the character encoding is wrong, we continue as long as the reparsing succeeded
-                if type(self._feedobj['bozo_exception']) is not CharacterEncodingOverride:
+                if type(self._feed_object['bozo_exception']) is not CharacterEncodingOverride:
                     logger.error('Downloaded feed is malformatted on' + self._feed_next_page)
                     return None
 
@@ -357,11 +357,11 @@ class PodcastArchiver:
                 first_page = False
 
             # Parse the feed object for episodes and the next page
-            linklist += self.parse_feed_to_links(self._feedobj)
-            self._feed_next_page = self.parse_feed_to_next_page(self._feedobj)
+            linklist += self.parse_feed_to_links(self._feed_object)
+            self._feed_next_page = self.parse_feed_to_next_page(self._feed_object)
 
             if self._feed_title is None:
-                self._feed_title = self._feedobj['feed']['title']
+                self._feed_title = self._feed_object['feed']['title']
 
             number_of_links = len(linklist)
 
