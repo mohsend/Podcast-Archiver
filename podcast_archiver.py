@@ -46,7 +46,7 @@ import xml.etree.ElementTree as etree
 logger = logging.getLogger(__name__)
 
 
-class writeable_dir(argparse.Action):
+class WriteableDir(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         prospective_dir = values
@@ -58,7 +58,7 @@ class writeable_dir(argparse.Action):
             raise ArgumentTypeError("%s is not a writeable dir" % prospective_dir)
 
 
-def getMaxFilenameLength():
+def get_max_filename_length():
     if platform.system() == "Linux":
         return 255
     if platform.system() == "Windows":
@@ -67,9 +67,9 @@ def getMaxFilenameLength():
         return 255
 
 
-def shortenFilename(filename):
+def shorten_filename(filename):
     filename, file_extension = os.path.splitext(filename)
-    return filename[:(getMaxFilenameLength()-len(file_extension)-1)] + "…" + file_extension
+    return filename[:(get_max_filename_length() - len(file_extension) - 1)] + "…" + file_extension
 
 
 class PodcastArchiver:
@@ -121,7 +121,7 @@ class PodcastArchiver:
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-    def addArguments(self, args):
+    def add_arguments(self, args):
 
         # if type(args) is argparse.ArgumentParser:
         #     args = parser.parse_args()
@@ -131,10 +131,10 @@ class PodcastArchiver:
             logger.info('Input arguments: %s' % args)
 
         for feed in (args.feed or []):
-            self.addFeed(feed)
+            self.add_feed(feed)
 
         for opml in (args.opml or []):
-            self.parseOpmlFile(opml)
+            self.parse_opml_file(opml)
 
         if args.dir:
             self.savedir = args.dir
@@ -152,22 +152,22 @@ class PodcastArchiver:
         if self.verbose > 1:
             logger.info("Verbose level: %d", self.verbose)
 
-    def addFeed(self, feed):
+    def add_feed(self, feed):
         if path.isfile(feed):
             self.feedlist += open(feed, 'r').read().strip().splitlines()
         else:
             self.feedlist.append(feed)
 
-    def parseOpmlFile(self, opml):
+    def parse_opml_file(self, opml):
         with opml as file:
             tree = etree.fromstringlist(file)
 
         for feed in [node.get('xmlUrl') for node
                      in tree.findall("*/outline/[@type='rss']")
                      if node.get('xmlUrl') is not None]:
-            self.addFeed(feed)
+            self.add_feed(feed)
 
-    def processFeeds(self):
+    def process_feeds(self):
 
         if self.verbose > 0 and self.update:
             logger.info("Updating archive")
@@ -175,8 +175,8 @@ class PodcastArchiver:
         for feed in self.feedlist:
             if self.verbose > 0:
                 logger.info("Downloading archive for: " + feed)
-            linklist = self.processPodcastLink(feed)
-            self.downloadPodcastFiles(linklist)
+            linklist = self.process_podcast_link(feed)
+            self.download_podcast_files(linklist)
 
         if self.verbose > 0:
             logger.info("Done.")
@@ -188,7 +188,7 @@ class PodcastArchiver:
             for ep in self.downloadedEpisodes:
                 logger.info(ep)
 
-    def parseGlobalFeedInfo(self, feedobj=None):
+    def parse_global_feed_info(self, feedobj=None):
         if feedobj is None:
             feedobj = self._feedobj
 
@@ -199,34 +199,34 @@ class PodcastArchiver:
 
         return self._feed_info_dict
 
-    def slugifyString(filename):
+    def slugify_string(filename):
         filename = unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore')
         filename = re.sub('[^\w\s\-\.]', '', filename.decode('ascii')).strip()
         filename = re.sub('[-\s]+', '-', filename)
 
         return filename
 
-    def linkToTargetFilename(self, link, title=None):
+    def link_to_target_filename(self, link, title=None):
 
         # Remove HTTP GET parameters from filename by parsing URL properly
         linkpath = urlparse(link).path
         basename = path.basename(linkpath)
-        filename, fileextension = path.splitext(basename)
+        filename, file_extension = path.splitext(basename)
 
         if self.retitle and title is not None:
-            basename = title + fileextension
+            basename = title + file_extension
 
         # If requested, slugify the filename
         if self.slugify:
-            basename = PodcastArchiver.slugifyString(basename)
-            self._feed_title = PodcastArchiver.slugifyString(self._feed_title)
+            basename = PodcastArchiver.slugify_string(basename)
+            self._feed_title = PodcastArchiver.slugify_string(self._feed_title)
         else:
             basename.replace(path.pathsep, '_')
             basename.replace(path.sep, '_')
             self._feed_title.replace(path.pathsep, '_')
             self._feed_title.replace(path.sep, '_')
             if platform.system() == "Windows":
-                basename = self.replaceCharactersOnWindows(basename)
+                basename = self.replace_characters_on_windows(basename)
 
         # Generate local path and check for existence
         if self.subdirs:
@@ -236,7 +236,7 @@ class PodcastArchiver:
 
         return filename
 
-    def replaceCharactersOnWindows(self, basename):
+    def replace_characters_on_windows(self, basename):
         if self.delete_illegal_characters:
             basename = basename.replace(":", "")
             basename = basename.replace("|", "")
@@ -277,13 +277,13 @@ class PodcastArchiver:
             self._feed_title = self._feed_title.replace('<', "-")
         return basename
 
-    def parseFeedToNextPage(self, feedobj=None):
+    def parse_feed_to_next_page(self, feed_object=None):
 
-        if feedobj is None:
-            feedobj = self._feedobj
+        if feed_object is None:
+            feed_object = self._feedobj
 
         # Assuming there will only be one link declared as 'next'
-        self._feed_next_page = [link['href'] for link in feedobj['feed']['links']
+        self._feed_next_page = [link['href'] for link in feed_object['feed']['links']
                                 if link['rel'] == 'next']
 
         if len(self._feed_next_page) > 0:
@@ -293,22 +293,22 @@ class PodcastArchiver:
 
         return self._feed_next_page
 
-    def parseFeedToLinks(self, feed=None):
+    def parse_feed_to_links(self, feed=None):
 
         if feed is None:
             feed = self._feedobj
 
         # Try different feed episode layouts: 'items' or 'entries'
-        episodeList = feed.get('items', False) or feed.get('entries', False)
-        if episodeList:
-            linklist = [self.parseEpisode(episode) for episode in episodeList]
+        episode_list = feed.get('items', False) or feed.get('entries', False)
+        if episode_list:
+            linklist = [self.parse_episode(episode) for episode in episode_list]
             linklist = [link for link in linklist if len(link) > 0]
         else:
             linklist = []
 
         return linklist
 
-    def parseEpisode(self, episode):
+    def parse_episode(self, episode):
         url = None
         episode_info = {}
         for link in episode['links']:
@@ -325,7 +325,7 @@ class PodcastArchiver:
 
         return episode_info
 
-    def processPodcastLink(self, link):
+    def process_podcast_link(self, link):
         if self.verbose > 0:
             logger.info("1. Gathering link list ...")
 
@@ -355,33 +355,33 @@ class PodcastArchiver:
                     return None
 
             if first_page:
-                self.parseGlobalFeedInfo()
+                self.parse_global_feed_info()
                 first_page = False
 
             # Parse the feed object for episodes and the next page
-            linklist += self.parseFeedToLinks(self._feedobj)
-            self._feed_next_page = self.parseFeedToNextPage(self._feedobj)
+            linklist += self.parse_feed_to_links(self._feedobj)
+            self._feed_next_page = self.parse_feed_to_next_page(self._feedobj)
 
             if self._feed_title is None:
                 self._feed_title = self._feedobj['feed']['title']
 
-            numberOfLinks = len(linklist)
+            number_of_links = len(linklist)
 
             # On given option, run an update, break at first existing episode
             if self.update:
                 for index, episode_dict in enumerate(linklist):
                     link = episode_dict['url']
-                    filename = self.linkToTargetFilename(link, episode_dict['title'])
+                    filename = self.link_to_target_filename(link, episode_dict['title'])
 
                     if path.isfile(filename):
                         del (linklist[index:])
                         break
-                numberOfLinks = len(linklist)
+                number_of_links = len(linklist)
 
             # On given option, crop linklist to maximum number of episodes
-            if self.maximumEpisodes is not None and self.maximumEpisodes < numberOfLinks:
+            if self.maximumEpisodes is not None and self.maximumEpisodes < number_of_links:
                 linklist = linklist[0:self.maximumEpisodes]
-                numberOfLinks = self.maximumEpisodes
+                number_of_links = self.maximumEpisodes
 
             if self.maximumEpisodes is not None or self.update:
                 break
@@ -389,7 +389,7 @@ class PodcastArchiver:
         linklist.reverse()
 
         if self.verbose > 0:
-            logger.info("Found %d episodes" % numberOfLinks)
+            logger.info("Found %d episodes" % number_of_links)
 
         if self.verbose > 2:
             import json
@@ -397,7 +397,7 @@ class PodcastArchiver:
 
         return linklist
 
-    def downloadPodcastFiles(self, linklist):
+    def download_podcast_files(self, linklist):
         if linklist is None or self._feed_title is None:
             return
 
@@ -417,8 +417,8 @@ class PodcastArchiver:
                     for key in episode_dict.keys():
                         logger.info(" * %10s: %s" % (key, episode_dict[key]))
             # Check existence once ...
-            filename = self.linkToTargetFilename(link, episode_dict['title'])
-            filename = self.shortenOnDemand(filename)
+            filename = self.link_to_target_filename(link, episode_dict['title'])
+            filename = self.shorten_on_demand(filename)
 
             if self.verbose > 1:
                 logger.info("Local filename: %s", filename)
@@ -438,8 +438,8 @@ class PodcastArchiver:
                     link = response.geturl()
                     total_size = int(response.getheader('content-length', '0'))
                     old_filename = filename
-                    filename = self.linkToTargetFilename(link, episode_dict['title'])
-                    filename = self.shortenOnDemand(filename)
+                    filename = self.link_to_target_filename(link, episode_dict['title'])
+                    filename = self.shorten_on_demand(filename)
 
                     if old_filename != filename:
                         if self.verbose > 1:
@@ -468,8 +468,8 @@ class PodcastArchiver:
                                   unit_scale=True, unit_divisor=1024) as progress_bar:
                             if not self.dryrun:
                                 with open(filename, 'wb') as outfile:
-                                    self.prettyCopyfileobj(response, outfile,
-                                                           callback=progress_bar.update)
+                                    self.pretty_copyfileobj(response, outfile,
+                                                            callback=progress_bar.update)
                             else:
                                 Path(filename).touch()
                     else:
@@ -500,14 +500,14 @@ class PodcastArchiver:
                 remove(filename)
                 raise
 
-    def shortenOnDemand(self, filename):
-        if len(filename) > getMaxFilenameLength():
-            filename = shortenFilename(filename)
+    def shorten_on_demand(self, filename):
+        if len(filename) > get_max_filename_length():
+            filename = shorten_filename(filename)
             if self.verbose > 1:
                 logger.info("Filename has been shortened")
         return filename
 
-    def prettyCopyfileobj(self, fsrc, fdst, callback, block_size=8 * 1024):
+    def pretty_copyfileobj(self, fsrc, fdst, callback, block_size=8 * 1024):
         while True:
             buf = fsrc.read(block_size)
             if not buf:
@@ -527,7 +527,7 @@ if __name__ == "__main__":
         parser.add_argument('-f', '--feed', action='append',
                             help='''Add a feed URl to the archiver. The parameter can be used
                                  multiple times, once for every feed.''')
-        parser.add_argument('-d', '--dir', action=writeable_dir,
+        parser.add_argument('-d', '--dir', action=WriteableDir,
                             help='''Set the output directory of the podcast archive.''')
         parser.add_argument('-s', '--subdirs', action='store_true',
                             help='''Place downloaded podcasts in separate subdirectories per
@@ -568,8 +568,8 @@ if __name__ == "__main__":
         args = parser.parse_args()
 
         pa = PodcastArchiver()
-        pa.addArguments(args)
-        pa.processFeeds()
+        pa.add_arguments(args)
+        pa.process_feeds()
     except KeyboardInterrupt:
         logger.error("Interrupted by user")
         sys.exit('\nERROR: Interrupted by user')
