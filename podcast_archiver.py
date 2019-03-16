@@ -100,8 +100,6 @@ class PodcastArchiver:
 
     def __init__(self):
 
-
-
         feedparser.USER_AGENT = self._userAgent
 
         logger.setLevel(logging.DEBUG)
