@@ -42,6 +42,7 @@ from urllib.parse import urlparse
 import unicodedata
 import re
 import xml.etree.ElementTree as etree
+from unidecode import unidecode
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +199,7 @@ class PodcastArchiver:
         return self._feed_info_dict
 
     def slugify_string(filename):
-        filename = unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore')
+        filename = unidecode(unicodedata.normalize('NFKD', filename)).encode('ascii', 'ignore')
         filename = re.sub('[^\w\s\-\.]', '', filename.decode('ascii')).strip()
         filename = re.sub('[-\s]+', '-', filename)
 
