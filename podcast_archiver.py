@@ -147,6 +147,7 @@ class PodcastArchiver:
         self.retitle = args.re_title
         self.overwrite_on_size_mismatch = args.overwrite_on_size_mismatch
         self.delete_illegal_characters = args.delete_illegal_characters
+        self.exec_string = args.exec
 
         if self.verbose > 1:
             logger.info("Verbose level: %d", self.verbose)
@@ -480,6 +481,7 @@ class PodcastArchiver:
 
                 self.successfulDownloads += 1
                 self.downloadedEpisodes.append(filename)
+                self.run_command_for_file(filename)
                 if self.verbose > 1:
                     logger.info("✓ Download successful.")
 
@@ -513,6 +515,15 @@ class PodcastArchiver:
                 break
             fdst.write(buf)
             callback(len(buf))
+
+    def run_command_for_file(self, filename):
+        if not self.exec_string:
+            return
+        cmd = self.exec_string.format(filename)
+        print(cmd)
+        if not self.dryrun:
+            from os import system
+            system(cmd)
 
 
 if __name__ == "__main__":
@@ -563,6 +574,10 @@ if __name__ == "__main__":
                             Otherwise the characters will be replaced with characters that make sense in the
                             context. The default behavior will result in prettier file names, but deletion
                             might improve compatibility with naming schemes of other podcast clients.''')
+        parser.add_argument('-E', '--exec', type=str,
+                            help='''Add a shell command to run after each successful episode download. 
+                            Use {0} in place of filename. Example:
+                            --exec 'ffmpeg -i {0} -c:a libopus -b:a 32k {0}.opus; rm {0};' ''')
 
         args = parser.parse_args()
 
