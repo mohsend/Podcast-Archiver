@@ -575,7 +575,7 @@ if __name__ == "__main__":
                             context. The default behavior will result in prettier file names, but deletion
                             might improve compatibility with naming schemes of other podcast clients.''')
         parser.add_argument('-E', '--exec', type=str,
-                            help='''Add a shell command to run after each successful episode download. 
+                            help='''Will run a shell command after each successful episode download. 
                             Use {0} in place of filename. Example:
                             --exec 'ffmpeg -i {0} -c:a libopus -b:a 32k {0}.opus; rm {0};' ''')
 

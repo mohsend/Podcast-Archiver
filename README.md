@@ -35,6 +35,8 @@ Before downloading any episode the function first fetches all available pages of
 * `-r`, `--re-title`: Will cause the title of the episode to be used as the name of the downloaded file instead of the name of the file as it is named on the server.
 * `-O`, `--overwrite-on-size-mismatch`: Will overwrite existing files if the size on the server differs from the size of the local file. This is helpful if an episode has been downloaded incompletely or has been re-published because of errors.
 * `-l`, `--delete-illegal-characters`: Will cause characters that are not allowed in file names to be deleted. Otherwise the characters will be replaced with characters that make sense in the context. The default behavior will result in prettier file names, but deletion might improve compatibility with naming schemes of other podcast clients.
+* `-E`, `--exec`: Will run a shell command after each successful episode download. Use {0} in place of filename. Example:
+`--exec 'ffmpeg -i {0} -ac 1 -c:a libopus -b:a 32k {0}.opus; rm {0};'`
 
 
 ### Full-fledged example
