@@ -520,7 +520,8 @@ class PodcastArchiver:
         if not self.exec_string:
             return
         cmd = self.exec_string.format(filename)
-        print(cmd)
+        if self.verbose > 1:
+            logger.info('Shell command to run: %s' % cmd)
         if not self.dryrun:
             from os import system
             system(cmd)
